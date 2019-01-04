@@ -10,6 +10,7 @@ import org.hamcrest.Matcher
 import android.support.test.espresso.matcher.ViewMatchers.isChecked as espressoIsChecked
 import android.support.test.espresso.matcher.ViewMatchers.isEnabled as espressoIsEnabled
 import android.support.test.espresso.matcher.ViewMatchers.isSelected as espressoIsSelected
+import android.support.test.espresso.matcher.ViewMatchers.isDisplayed as espressoIsDisplayed
 
 /**
  * The [espressoIsEnabled] function that can also handle disabled state through the boolean argument.
@@ -25,6 +26,8 @@ fun isChecked(isChecked: Boolean): Matcher<View> = maybeInvertMatcher(espressoIs
  * The [espressoIsSelected] function that can also handle not selected state through the boolean argument.
  */
 fun isSelected(isSelected: Boolean): Matcher<View> = maybeInvertMatcher(espressoIsSelected(), isSelected)
+
+fun isDisplayed(isDisplayed: Boolean): Matcher<View> = maybeInvertMatcher(espressoIsDisplayed(), isDisplayed)
 
 private fun maybeInvertMatcher(matcher: Matcher<View>, useUnmodifiedMatcher: Boolean): Matcher<View> = when {
     useUnmodifiedMatcher -> matcher

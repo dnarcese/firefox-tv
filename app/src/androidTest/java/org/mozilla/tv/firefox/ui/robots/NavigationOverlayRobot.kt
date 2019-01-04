@@ -24,6 +24,7 @@ import org.mozilla.tv.firefox.R
 import org.mozilla.tv.firefox.helpers.MainActivityTestRule
 import org.mozilla.tv.firefox.helpers.RecyclerViewHelpers
 import org.mozilla.tv.firefox.helpers.ext.assertIsChecked
+import org.mozilla.tv.firefox.helpers.ext.assertIsDisplayed
 import org.mozilla.tv.firefox.helpers.ext.assertIsEnabled
 import org.mozilla.tv.firefox.helpers.ext.assertIsSelected
 import org.mozilla.tv.firefox.helpers.ext.click
@@ -41,6 +42,7 @@ class NavigationOverlayRobot {
     fun reload() = reloadButton().click()
     fun toggleTurbo() = turboButton().click()
     fun openSettings() = settingsButton().click()
+    fun pocketTryAgain() = pocketTryAgainButton().click()
 
     fun assertCanGoBack(canGoBack: Boolean) = backButton().assertIsEnabled(canGoBack)
     fun assertCanGoForward(canGoForward: Boolean) = forwardButton().assertIsEnabled(canGoForward)
@@ -67,6 +69,10 @@ class NavigationOverlayRobot {
         .check(matches(RecyclerViewHelpers.atPosition(inPosition, hasDescendant(withText(withText)))))
 
     fun assertActivityFinishing(activity: MainActivityTestRule) = assertTrue(activity.activity.isFinishing)
+
+    fun assertPocketTryAgainButtonDisplayed(isDisplayed: Boolean) = pocketTryAgainButton().assertIsDisplayed(isDisplayed)
+    fun assertPocketErrorTextDisplayed(isDisplayed: Boolean) = pocketMegatileErrorText().assertIsDisplayed(isDisplayed)
+    fun assertPocketVideos(isDisplayed: Boolean) = pocketMegatileVideos().assertIsDisplayed(isDisplayed)
 
     class Transition {
         private val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
@@ -202,3 +208,6 @@ private fun homeTiles() = onView(withId(R.id.tileContainer))
 private fun overlay() = onView(withId(R.id.browserOverlay))
 private fun desktopModeButton() = onView(withId(R.id.desktopModeButton))
 private fun pocketMegaTile() = onView(withId(R.id.pocketVideosContainer))
+private fun pocketTryAgainButton() = onView(withId(R.id.megaTileTryAgainButton))
+private fun pocketMegatileVideos() = onView(withId(R.id.thumbnail1View))
+private fun pocketMegatileErrorText() = onView(withId(R.id.pocketMegaTileLoadError))
