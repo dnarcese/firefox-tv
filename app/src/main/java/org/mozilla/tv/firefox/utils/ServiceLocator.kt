@@ -21,7 +21,9 @@ import org.mozilla.tv.firefox.navigationoverlay.channels.ChannelRepo
 import org.mozilla.tv.firefox.pinnedtile.PinnedTileImageUtilWrapper
 import org.mozilla.tv.firefox.pinnedtile.PinnedTileRepo
 import org.mozilla.tv.firefox.pocket.PocketEndpoint
+import org.mozilla.tv.firefox.pocket.PocketEndpointRaw
 import org.mozilla.tv.firefox.pocket.PocketFeedStateMachine
+import org.mozilla.tv.firefox.pocket.PocketFetchCalculator
 import org.mozilla.tv.firefox.pocket.PocketRepoCache
 import org.mozilla.tv.firefox.pocket.PocketVideoRepo
 import org.mozilla.tv.firefox.search.SearchEngineManagerFactory
@@ -63,7 +65,6 @@ import org.mozilla.tv.firefox.webrender.cursor.CursorModel
  */
 open class ServiceLocator(val app: Application) {
     private val appVersion = app.packageManager.getPackageInfo(app.packageName, 0).versionName
-    private val pocketEndpoint get() = PocketEndpoint(appVersion, buildConfigDerivables.globalPocketVideoEndpoint, getIsEnglishLocale)
     private val buildConfigDerivables get() = BuildConfigDerivables(getIsEnglishLocale)
     private val pocketFeedStateMachine get() = PocketFeedStateMachine()
     private val getIsEnglishLocale = { LocaleManager.getInstance().currentLanguageIsEnglish(app) }
@@ -84,10 +85,13 @@ open class ServiceLocator(val app: Application) {
     val screenshotStoreWrapper by lazy { PinnedTileImageUtilWrapper(app) }
     val formattedDomainWrapper by lazy { FormattedDomainWrapper(app) }
     val channelRepo by lazy { ChannelRepo(pinnedTileRepo) }
+    val pocketEndpointRaw get() = PocketEndpointRaw(appVersion, buildConfigDerivables.globalPocketVideoEndpoint)
+    val pocketEndpoint get() = PocketEndpoint(pocketEndpointRaw, getIsEnglishLocale)
 
+    // These open vals are overridden in testing
     open val frameworkRepo = FrameworkRepo.newInstanceAndInit(app.getAccessibilityManager())
     open val pinnedTileRepo by lazy { PinnedTileRepo(app) }
-    open val pocketRepo = PocketVideoRepo(pocketEndpoint, pocketFeedStateMachine, buildConfigDerivables.initialPocketRepoState)
+    open val pocketRepo = PocketVideoRepo(pocketEndpoint, pocketFeedStateMachine, buildConfigDerivables.initialPocketRepoState, app.getSharedPreferences(PocketFetchCalculator.SHARED_PREFS_FILE, 0), app.resources)
     open val sessionRepo by lazy { SessionRepo(sessionManager, sessionUseCases, turboMode).apply { observeSources() } }
     open val settingsRepo by lazy { SettingsRepo(app) }
 }

@@ -4,16 +4,22 @@
 
 package org.mozilla.tv.firefox.pocket
 
+import android.content.SharedPreferences
+import android.content.res.Resources
+import android.util.Log
 import androidx.annotation.UiThread
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
+import org.mozilla.tv.firefox.R
+import org.mozilla.tv.firefox.telemetry.SentryIntegration
 import org.mozilla.tv.firefox.utils.PeriodicRequester
 import org.mozilla.tv.firefox.utils.Response
 import java.util.concurrent.TimeUnit
 
+private const val LOGTAG = "PocketVideoRepo"
 private val CACHE_UPDATE_FREQUENCY_MILLIS = TimeUnit.MINUTES.toMillis(45)
 private const val BASE_RETRY_TIME = 1_000L
 
@@ -24,7 +30,9 @@ private const val BASE_RETRY_TIME = 1_000L
 open class PocketVideoRepo(
     private val pocketEndpoint: PocketEndpoint,
     private val pocketFeedStateMachine: PocketFeedStateMachine,
-    initialState: PocketVideoRepo.FeedState
+    initialState: FeedState,
+    private val sharedPreferences: SharedPreferences,
+    private val resources: Resources
 ) {
 
     sealed class FeedState {
@@ -51,6 +59,23 @@ open class PocketVideoRepo(
 
     @UiThread // update backgroundUpdates.
     fun startBackgroundUpdates() {
+        // called from onStart; maybe somewhere else but we can write it here for now
+        // Fetch from shared preferences
+        // Push results into Rx: _feedState.onNext
+        // Later: only update if it's new: _feedState.distinctUntilChanged() // ... // .subscribe()
+        val videos = sharedPreferences.getString(PocketFetchCalculator.KEY_JSON_FULL, null)
+            ?: resources.getString(R.raw.bundled_pocket_json)
+        val convertedVideos = pocketEndpoint.convertVideosJSON(videos)
+
+        if (convertedVideos == null) {
+            Log.e(LOGTAG, "Error in converting JSON to Pocket video")
+            SentryIntegration.capture(Exception("Error in converting JSON to Pocket video"))
+            return
+        }
+
+        //convert videos
+        _feedState.onNext(FeedState.LoadComplete(convertedVideos))
+
         compositeDisposable.clear()
         periodicRequester.start()
             .subscribe(this::postUpdate)

@@ -7,7 +7,6 @@ package org.mozilla.tv.firefox.helpers
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.subjects.PublishSubject
-import org.mozilla.tv.firefox.ext.toUri
 import org.mozilla.tv.firefox.pocket.PocketEndpoint
 import org.mozilla.tv.firefox.pocket.PocketFeedStateMachine
 import org.mozilla.tv.firefox.pocket.PocketVideoRepo
@@ -23,7 +22,7 @@ class CustomPocketFeedStateProvider {
 
     private val localeIsEnglish: () -> Boolean = { true }
 
-    private val pocketEndpoint = object : PocketEndpoint("VERSION", "www.mock.com".toUri(), localeIsEnglish) {
+    private val pocketEndpoint = object : PocketEndpoint("VERSION", localeIsEnglish) {
         override suspend fun getRecommendedVideos(): List<PocketViewModel.FeedItem.Video>? {
             return PocketViewModel.noKeyPlaceholders
         }

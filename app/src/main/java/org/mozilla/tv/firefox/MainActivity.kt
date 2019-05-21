@@ -14,6 +14,11 @@ import android.util.Log
 import android.view.KeyEvent
 import android.view.View
 import androidx.lifecycle.Observer
+import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import io.sentry.Sentry
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.overlay_debug.debugLog
@@ -27,7 +32,9 @@ import org.mozilla.tv.firefox.ext.serviceLocator
 import org.mozilla.tv.firefox.ext.setupForApp
 import org.mozilla.tv.firefox.ext.webRenderComponents
 import org.mozilla.tv.firefox.onboarding.OnboardingActivity
+import org.mozilla.tv.firefox.pocket.PocketFetchCalculator
 import org.mozilla.tv.firefox.pocket.PocketOnboardingActivity
+import org.mozilla.tv.firefox.pocket.PocketWorker
 import org.mozilla.tv.firefox.telemetry.TelemetryIntegration
 import org.mozilla.tv.firefox.telemetry.UrlTextInputLocation
 import org.mozilla.tv.firefox.utils.BuildConstants
@@ -38,6 +45,9 @@ import org.mozilla.tv.firefox.utils.ViewUtils
 import org.mozilla.tv.firefox.utils.publicsuffix.PublicSuffix
 import org.mozilla.tv.firefox.webrender.VideoVoiceCommandMediaSession
 import org.mozilla.tv.firefox.widget.InlineAutocompleteEditText
+import java.util.*
+import java.util.concurrent.TimeUnit
+import kotlin.random.Random
 
 interface MediaSessionHolder {
     val videoVoiceCommandMediaSession: VideoVoiceCommandMediaSession
@@ -109,6 +119,22 @@ class MainActivity : LocaleAwareAppCompatActivity(), OnUrlEnteredListener, Media
             debugLog.visibility = View.VISIBLE
             debugLog.text = this
         }
+
+    }
+
+    private fun schedulePocketBackgroundFetch() {
+        val constraints = Constraints.Builder()
+    //            .setRequiresDeviceIdle(true)
+            .build()
+
+        val saveRequest =
+            OneTimeWorkRequestBuilder<PocketWorker>()
+                .setInitialDelay(PocketFetchCalculator().getWorkInitialDelayMillis(), TimeUnit.MINUTES)
+                .setConstraints(constraints)
+                .build()
+
+        WorkManager.getInstance(applicationContext)
+            .enqueueUniqueWork("PocketFetch", ExistingWorkPolicy.KEEP, saveRequest)
     }
 
     @SuppressLint("MissingSuperCall")
@@ -170,6 +196,7 @@ class MainActivity : LocaleAwareAppCompatActivity(), OnUrlEnteredListener, Media
         super.onStart()
         // TODO when MainActivity has a VM, route this call through it
         serviceLocator.pocketRepo.startBackgroundUpdates()
+        schedulePocketBackgroundFetch()
         rootView.viewTreeObserver.addOnGlobalFocusChangeListener(serviceLocator.focusRepo)
     }
 
